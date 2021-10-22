@@ -1,8 +1,17 @@
 import typing
+import os
+import time
 import colorama
-from PIL import Image
+from PIL import Image, ImageSequence
 
-img = Image.open('example.gif')
+
+def get_terminal_size():
+    try:
+        columns, rows = os.get_terminal_size(0)
+    except OSError:
+        columns, rows = os.get_terminal_size(1)
+    return columns, rows
+
 
 table: typing.List = [' ', '.', ':', "'", ',', '-', ';', '_', '"', '+', '°', '•', '^', '=', '|', '(', '[', '{', "∆",
                       '©', '®', '&', "$", "@", '%', '#', '¶']
@@ -27,24 +36,30 @@ colors = {"GREEN": [colorama.Style.DIM + colorama.Fore.GREEN, colorama.Fore.GREE
                     colorama.Fore.LIGHTWHITE_EX, colorama.Style.BRIGHT + colorama.Fore.LIGHTWHITE_EX],
           "BLACK": [colorama.Style.DIM + colorama.Fore.BLACK, colorama.Fore.BLACK,
                     colorama.Style.BRIGHT + colorama.Fore.BLACK, colorama.Style.DIM + colorama.Fore.LIGHTBLACK_EX,
-                    colorama.Fore.LIGHTBLACK_EX, colorama.Style.BRIGHT + colorama.Fore.LIGHTBLACK_EX]}
+                    colorama.Fore.LIGHTBLACK_EX, colorama.Style.BRIGHT + colorama.Fore.LIGHTBLACK_EX],
+          "BLUE": [colorama.Style.DIM + colorama.Fore.BLACK, colorama.Fore.BLACK,
+                   colorama.Style.BRIGHT + colorama.Fore.BLACK, colorama.Style.DIM + colorama.Fore.LIGHTBLACK_EX,
+                   colorama.Fore.LIGHTBLACK_EX, colorama.Style.BRIGHT + colorama.Fore.LIGHTBLACK_EX]}
 
 
 def color_it(color: tuple) -> str:
-    if all([col > 150 for col in color]):
+    if all([col > 160 for col in color]):
         return colors["WHITE"][round((len(colors["WHITE"]) - 1) / 255 * (color[1] + color[2]) / 2)]
     if all([col < 60 for col in color]):
         return colors["BLACK"][round((len(colors["BLACK"]) - 1) / 255 * (color[1] + color[2]) / 2)]
-    if color[1] + color[2] > color[0] * 2:
+    if color[1] + color[2] > color[0] * 2 + 40:
         return colors["CYAN"][round((len(colors["CYAN"]) - 1) / 255 * (color[1] + color[2]) / 2)]
-    if color[0] + color[2] > color[1] * 2:
+    if color[0] + color[2] > color[1] * 2 + 40:
         return colors["MAGENTA"][round((len(colors["MAGENTA"]) - 1) / 255 * (color[2] + color[1]) / 2)]
-    if sum(color[0:2]) > color[2] * 2:
+    if sum(color[0:2]) > color[2] * 2 + 40:
         return colors["YELLOW"][round((len(colors["YELLOW"]) - 1) / 255 * (color[1] + color[0]) / 2)]
-    if max(color) == color[1]:
+    if max(color) == color[1] and color[1] > 200:
         return colors["GREEN"][round((len(colors["GREEN"]) - 1) / 255 * color[1])]
-    if max(color) == color[0]:
+    if max(color) == color[0] and color[0] > 200:
         return colors["RED"][round((len(colors["RED"]) - 1) / 255 * color[0])]
+    if max(color) == color[2] and color[2] > 200:
+        return colors["BLUE"][round((len(colors["BLUE"]) - 1) / 255 * color[0])]
+
     return ""
 
 
@@ -53,8 +68,9 @@ def convert(depth: int) -> str:
 
 
 def print_image(path: str) -> None:
+    columns, rows = get_terminal_size()
     image: Image.Image = Image.open(path)
-    image = image.convert("RGB").resize((180, 80))
+    image = image.convert("RGB").resize((columns, rows))
     imagel = image.convert("L")
     for i in range(0, image.height):
         for j in range(0, image.width):
@@ -62,3 +78,18 @@ def print_image(path: str) -> None:
             print(color_it(image.getpixel((j, i))) + convert(imagel.getpixel((j, i))) + colorama.Style.RESET_ALL,
                   end='')
         print()
+
+
+def show_gif(path: str) -> None:
+    img: Image.Image = Image.open(path)
+    while True:
+        for image in ImageSequence.Iterator(img):
+            columns, rows = get_terminal_size()
+            image = image.convert("RGB").resize((columns, rows))
+            imagel = image.convert("L")
+            print("".join(
+                [color_it(image.getpixel((j, i))) + convert(imagel.getpixel((j, i))) + colorama.Style.RESET_ALL for i in
+                 range(0, image.height) for j in range(0, image.width)]))
+
+            time.sleep(1 / 30)
+        os.system("clear")
