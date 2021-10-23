@@ -76,11 +76,11 @@ def convert(depth: int) -> str:
 def print_image(path: str, columns: int, rows: int, center: bool = True) -> None:
     terminal_size: typing.Tuple[int, int] = get_terminal_size()
     image: Image.Image = Image.open(path)
-    image = image.convert("RGB").resize((columns, rows))
+    image = image.convert("RGB").resize((terminal_size[0] // columns, terminal_size[1] // rows))
     imagel: Image.Image = image.convert("L")
     for i in range(0, image.height):
         if center:
-            print(" " * ceil(terminal_size[0] / 2 - columns / 2), end="")
+            print(" " * ceil(terminal_size[0] / 2 - terminal_size[0] / columns / 2), end="")
         for j in range(0, image.width):
             middle: typing.Tuple[int, int, int]
             print(color_it(image.getpixel((j, i))) + convert(imagel.getpixel((j, i))) + colorama.Style.RESET_ALL,
@@ -88,7 +88,7 @@ def print_image(path: str, columns: int, rows: int, center: bool = True) -> None
         print()
 
 
-def generate_image(path: str, columns: int, rows: int) -> None:
+def generate_image(path: str, columns: int, rows: int) -> typing.Generator:
     image: Image.Image = Image.open(path)
     image = image.convert("RGB").resize((columns, rows))
     imagel: Image.Image = image.convert("L")
