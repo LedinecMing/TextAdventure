@@ -1,3 +1,3 @@
 # TextAdventure
 game
-![Screenshot](screen/screen1.png)
+![Screenshot](screens/screen1.png)
